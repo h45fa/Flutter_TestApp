@@ -21,9 +21,35 @@ class UserInfoApp extends StatelessWidget {
   }
 }
 
+class User {
+  final int id;
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String avatar;
+
+  User({
+    required this.id,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    required this.avatar,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      email: json['email'],
+      firstName: json['first_name'],
+      lastName: json['last_name'],
+      avatar: json['avatar'],
+    );
+  }
+}
+
 class UserController extends GetxController {
-  var users = <dynamic>[].obs;
-  var currentPage = 2.obs; // Initial page number
+  var users = <User>[].obs;
+  var currentPage = 2.obs;
 
   Future<void> fetchUsers({int? page}) async {
     if (page != null) currentPage.value = page;
@@ -32,7 +58,8 @@ class UserController extends GetxController {
         await http.get(Uri.parse('https://reqres.in/api/users?page=${currentPage.value}'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      users.assignAll(data['data']);
+      final usersList = List<Map<String, dynamic>>.from(data['data']);
+      users.assignAll(usersList.map((userData) => User.fromJson(userData)));
 
       saveUserDataToLocal(users);
     } else {
@@ -40,15 +67,16 @@ class UserController extends GetxController {
     }
   }
 
-  void saveUserDataToLocal(List<dynamic> userData) async {
+  void saveUserDataToLocal(List<User> userData) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString('user_data', json.encode(userData));
   }
 
-  Future<List<dynamic>> loadUserDataFromLocal() async {
+  Future<List<User>> loadUserDataFromLocal() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String userDataJson = prefs.getString('user_data') ?? '[]';
-    return json.decode(userDataJson);
+    final usersList = List<Map<String, dynamic>>.from(json.decode(userDataJson));
+    return usersList.map((userData) => User.fromJson(userData)).toList();
   }
 }
 
@@ -113,7 +141,7 @@ class UserListScreen extends StatelessWidget {
 }
 
 class UserCard extends StatelessWidget {
-  final dynamic user;
+  final User user;
 
   const UserCard({Key? key, required this.user}) : super(key: key);
 
@@ -129,18 +157,18 @@ class UserCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            backgroundImage: NetworkImage(user['avatar']),
+            backgroundImage: NetworkImage(user.avatar),
             radius: 40.0,
           ),
           const SizedBox(height: 8.0),
           Text(
-            '${user['first_name']} ${user['last_name']}',
+            '${user.firstName} ${user.lastName}',
             style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4.0),
           Text(
-            user['email'],
+            user.email,
             style: const TextStyle(fontSize: 14.0),
             textAlign: TextAlign.center,
           ),
@@ -151,7 +179,7 @@ class UserCard extends StatelessWidget {
 }
 
 class UserDetailsScreen extends StatelessWidget {
-  final dynamic user;
+  final User user;
 
   const UserDetailsScreen({Key? key, required this.user}) : super(key: key);
 
@@ -166,18 +194,18 @@ class UserDetailsScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage(user['avatar']),
+              backgroundImage: NetworkImage(user.avatar),
               radius: 64.0,
             ),
             const SizedBox(height: 16.0),
             Text(
-              '${user['first_name']} ${user['last_name']}',
+              '${user.firstName} ${user.lastName}',
               style:
                   const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
             ),
-            Text('ID: ${user['id']}', style: const TextStyle(fontSize: 16.0)),
+            Text('ID: ${user.id}', style: const TextStyle(fontSize: 16.0)),
             const SizedBox(height: 8.0),
-            Text(user['email'], style: const TextStyle(fontSize: 16.0)),
+            Text(user.email, style: const TextStyle(fontSize: 16.0)),
           ],
         ),
       ),
