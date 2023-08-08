@@ -25,7 +25,8 @@ class UserController extends GetxController {
   var users = <dynamic>[].obs;
 
   Future<void> fetchUsers() async {
-    final response = await http.get(Uri.parse('https://reqres.in/api/users?page=2'));
+    final response =
+        await http.get(Uri.parse('https://reqres.in/api/users?page=2'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       users.assignAll(data['data']);
@@ -73,7 +74,8 @@ class UserListScreen extends StatelessWidget {
           itemBuilder: (BuildContext context, int index) {
             return GestureDetector(
               onTap: () {
-                Get.to(() => UserDetailsScreen(user: userController.users[index]));
+                Get.to(
+                    () => UserDetailsScreen(user: userController.users[index]));
               },
               child: UserCard(user: userController.users[index]),
             );
@@ -144,8 +146,10 @@ class UserDetailsScreen extends StatelessWidget {
             const SizedBox(height: 16.0),
             Text(
               '${user['first_name']} ${user['last_name']}',
-              style: const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              style:
+                  const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
             ),
+            Text('ID: ${user['id']}', style: const TextStyle(fontSize: 16.0)),
             const SizedBox(height: 8.0),
             Text(user['email'], style: const TextStyle(fontSize: 16.0)),
           ],
