@@ -23,10 +23,13 @@ class UserInfoApp extends StatelessWidget {
 
 class UserController extends GetxController {
   var users = <dynamic>[].obs;
+  var currentPage = 2.obs; // Initial page number
 
-  Future<void> fetchUsers() async {
+  Future<void> fetchUsers({int? page}) async {
+    if (page != null) currentPage.value = page;
+
     final response =
-        await http.get(Uri.parse('https://reqres.in/api/users?page=2'));
+        await http.get(Uri.parse('https://reqres.in/api/users?page=${currentPage.value}'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       users.assignAll(data['data']);
@@ -56,32 +59,55 @@ class UserListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fetch user data when the screen initializes
     userController.fetchUsers();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('User List'),
       ),
-      body: Obx(() {
-        return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // Display two cards in each row
-            crossAxisSpacing: 16.0,
-            mainAxisSpacing: 16.0,
+      body: Column(
+        children: [
+          Expanded(
+            child: Obx(() {
+              return GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16.0,
+                  mainAxisSpacing: 16.0,
+                ),
+                itemCount: userController.users.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Get.to(
+                          () => UserDetailsScreen(user: userController.users[index]));
+                    },
+                    child: UserCard(user: userController.users[index]),
+                  );
+                },
+              );
+            }),
           ),
-          itemCount: userController.users.length,
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              onTap: () {
-                Get.to(
-                    () => UserDetailsScreen(user: userController.users[index]));
-              },
-              child: UserCard(user: userController.users[index]),
-            );
-          },
-        );
-      }),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  userController.fetchUsers(page: userController.currentPage.value - 1);
+                },
+                child: const Text('Previous Page'),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton(
+                onPressed: () {
+                  userController.fetchUsers(page: userController.currentPage.value + 1);
+                },
+                child: const Text('Next Page'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
